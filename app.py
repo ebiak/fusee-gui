@@ -197,6 +197,12 @@ spacer2.grid(row=2,column=0)
 #asking for ehci patch on start up check box
 StartUpVar = BooleanVar()
 StartUpCB = Checkbutton(settingsTab,text = "Ask for EHCI patch on app start up",variable=StartUpVar,command=updateCb)
+try:
+    if settings["askOnStart"]:
+        StartUpCB.select()
+        ehciDialog()
+except:
+    pass
 StartUpCB.grid(row=3,column=1,columnspan=2)
 #a little note
 Label(settingsTab,text="(Note: Also only for Linux)").grid(row = 4,column=1,columnspan=2)
