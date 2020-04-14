@@ -1,32 +1,40 @@
 #!/bin/python3
 import tkinter as tk
-from tkinter import filedialog,ttk,Entry,Label,Button,PhotoImage,Listbox,Scrollbar,Text,Checkbutton,messagebox,Toplevel,BooleanVar
+from tkinter import filedialog,ttk,Entry,Label,Button,Listbox,Scrollbar,Text,Checkbutton,messagebox,Toplevel,BooleanVar,PhotoImage
 import fusee_launcher as fusee
 import mock_arguments
 import json
 import platform
 import subprocess
+import sys
+import os
 usb_backend  = fusee.HaxBackend.create_appropriate_backend()
 #intiating the main window
 root = tk.Tk()
 root.title("fusee-gui")
 root.minsize(400,300)
-root.maxsize(400,300)
+root.resizable(width=False, height=False)
+#pyinstaller compatibility
+def file_locator(file):
+        try:
+            path = sys._MEIPASS # pylint: disable=no-member
+        except Exception:
+            path = os.path.abspath('.')
+        return os.path.join(path, file)
 #checking for a switch and updating the status
 def update():
     device = usb_backend.find_device(0x0955, 0x7321)
     if device:
-        rcmstat.config(image=rcmDetected)
+        rcmstat.config(image=detected)
         payloadInject.config(state=tk.NORMAL)
     else:
-        rcmstat.config(image=rcmNotDetected)
+        rcmstat.config(image=undetected)
         payloadInject.config(state=tk.DISABLED)
     root.after(333,update)
 #payload selection dialog the x is for the enter key bind
 def selectPayload(x = 1):
-    filename = filedialog.askopenfilename(initialdir="./", title = "Select File",
-    filetypes=(("Binary","*.bin"),("All Files", "*.*")))
-    if filename != "":
+    filename = filedialog.askopenfilename(initialdir="./", title = "Select File",filetypes=(("Binary","*.bin"),("All Files", "*.*")))
+    if filename !=  () and filename != "":
         payloadEntry.delete(0,tk.END)
         payloadEntry.insert(0,filename)
         #storing the current payload location so you don't have to choose it again
@@ -40,7 +48,7 @@ def selectPayload(x = 1):
 def sendPayload(payload):
     args = mock_arguments.MockArguments()
     args.payload   = payload
-    args.relocator = "intermezzo.bin"
+    args.relocator = file_locator("intermezzo.bin")
     #currently the logs arent "real time" they appear after the process has already finished
     Log.config(state=tk.NORMAL)
     logs = fusee.do_hax(args)
@@ -90,7 +98,7 @@ def FavPayloadSelect(event):
     f.write(json.dumps(data,indent=4))
     f.close()
 def patchEhci(password,top):
-    proc = subprocess.Popen(['echo {} | sudo -S ./ehci_patch.py'.format(password)], stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
+    proc = subprocess.Popen(['echo {} | sudo -S {}'.format(password,file_locator("ehci_patch.py"))], stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
     output = proc.stdout.read()
     errOutput = proc.stderr.read()
     Log.config(state=tk.NORMAL)
@@ -104,6 +112,9 @@ def ehciDialog():
         messagebox.showerror("Non linux oprating system detected","Don't use this on non linux operating systems ,it's not tested and there is no reason to")
     else:
         top = Toplevel(root)
+        top.resizable(width=False, height=False)
+        top.after(100,lambda: top.lift())
+        top.after(100,lambda: top.focus_set())
         Label(top, text="Enter your password:").pack()
         e = Entry(top,show="*")
         e.pack(padx=5)
@@ -128,7 +139,6 @@ tabControl.add(payloadTab, text = "Payload")
 # The tools tab which will be completed in future releases
 # toolsTab = ttk.Frame(tabControl)
 # tabControl.add(toolsTab,text = "Tools")
-
 settingsTab = ttk.Frame(tabControl)
 tabControl.add(settingsTab,text = "Settings")
 #payload tab widgets
@@ -138,20 +148,18 @@ try:
     f=open("settings.json","r")
     settings = json.load(f)
     f.close()
-
-    payloadEntry = Entry(payloadTab,width = 22,font="arial 15")
-    payloadEntry.grid(column=0,row=1)
-    payloadEntry.delete(0,tk.END)
-    payloadEntry.insert(0,settings["current"])
 except:
     f = open("settings.json","w+")
     f.write("{}")
     f.close()
-
-    payloadEntry = Entry(payloadTab,width = 22,font="arial 15")
-    payloadEntry.grid(column=0,row=1)
-
-browse = PhotoImage(file = "res/browse.png")
+payloadEntry = Entry(payloadTab,width = 22,font="arial 15")
+payloadEntry.grid(column=0,row=1)
+try:
+    payloadEntry.delete(0,tk.END)
+    payloadEntry.insert(0,settings["current"])
+except:
+    pass
+browse = PhotoImage(file = file_locator("res/browse.png"))
 payloadSelectFile = Button(payloadTab,image = browse,command=selectPayload)
 payloadSelectFile.bind('<Return>',selectPayload)
 payloadSelectFile.grid(column=2,row=1)
@@ -172,12 +180,11 @@ try:
         payloadFavorites.insert(tk.END,i)
 except:
     pass
-pfAddIco=PhotoImage(file="res/add.png")
-pfDelIco=PhotoImage(file="res/delete.png")
-
 #favorite payload button
-pfAdd= Button(payloadTab,image=pfAddIco,command=lambda: FavPayloadAdd(payloadEntry.get()))
-pfDel= Button(payloadTab,image=pfDelIco,command=FavPayloadDel)
+pfAddIco = PhotoImage(file=file_locator("res/add.png"))
+pfDelIco = PhotoImage(file=file_locator("res/delete.png"))
+pfAdd = Button(payloadTab,image=pfAddIco,command=lambda: FavPayloadAdd(payloadEntry.get()))
+pfDel = Button(payloadTab,image=pfDelIco,command=FavPayloadDel)
 pfAdd.grid(row=3,column=3,sticky=tk.NE,padx=5)
 pfDel.grid(row=3,column=3,sticky=tk.E,padx=5)
 tabControl.pack(expan = 1, fill = "both")
@@ -197,22 +204,22 @@ spacer2.grid(row=2,column=0)
 #asking for ehci patch on start up check box
 StartUpVar = BooleanVar()
 StartUpCB = Checkbutton(settingsTab,text = "Ask for EHCI patch on app start up",variable=StartUpVar,command=updateCb)
+StartUpCB.grid(row=3,column=1,columnspan=2)
+#a little note
+Label(settingsTab,text="(Note: Also only for Linux)").grid(row = 4,column=1,columnspan=2)
+#RCM Status and log
+detected=PhotoImage(file=file_locator("res/rcm_detected.png"))
+undetected=PhotoImage(file=file_locator("res/rcm_undetected.png"))
+rcmstat = Label(root,image=undetected)
+rcmstat.place(x=5,y=212)
+Log = Text(root,width=23,height=3,state=tk.DISABLED,font="arial 10",wrap = tk.WORD)
+Log.place(x=130,y=212,width=265,height=84)
+update()
 try:
     if settings["askOnStart"]:
         StartUpCB.select()
         ehciDialog()
 except:
     pass
-StartUpCB.grid(row=3,column=1,columnspan=2)
-#a little note
-Label(settingsTab,text="(Note: Also only for Linux)").grid(row = 4,column=1,columnspan=2)
-#RCM Status and log
-rcmDetected = PhotoImage(file="res/rcm_detected.png")
-rcmNotDetected = PhotoImage(file="res/rcm_undetected.png")
-rcmstat = Label(root,image=rcmNotDetected)
-rcmstat.place(x=5,y=212)
-Log = Text(root,width=23,height=3,state=tk.DISABLED,font="arial 10",wrap = tk.WORD)
-Log.place(x=130,y=212,width=265,height=84)
-update()
 #start up the window
 root.mainloop()
