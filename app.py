@@ -1,6 +1,6 @@
 #!/bin/python3
 import tkinter as tk
-from tkinter import filedialog,ttk,Entry,Label,Button,Listbox,Scrollbar,Text,Checkbutton,messagebox,Toplevel,BooleanVar,PhotoImage
+from tkinter import ttk,Entry,Label,Button,Listbox,Scrollbar,Text,Checkbutton,messagebox,Toplevel,BooleanVar,PhotoImage
 import fusee_launcher as fusee
 import mock_arguments
 import json
@@ -8,6 +8,7 @@ import platform
 import subprocess
 import sys
 import os
+import zenityFileChooser
 usb_backend  = fusee.HaxBackend.create_appropriate_backend()
 #intiating the main window
 root = tk.Tk()
@@ -33,7 +34,7 @@ def update():
     root.after(333,update)
 #payload selection dialog the x is for the enter key bind
 def selectPayload(x = 1):
-    filename = filedialog.askopenfilename(initialdir="./", title = "Select File",filetypes=(("Binary","*.bin"),("All Files", "*.*")))
+    filename = zenityFileChooser.fileChooser("*.bin")
     if filename !=  () and filename != "":
         payloadEntry.delete(0,tk.END)
         payloadEntry.insert(0,filename)
