@@ -16,7 +16,7 @@ using an EHCI port to inject is unreliable so your switch may not boot , to fix 
 ![alt text](screenshot.png)
 
 ## Usage on windows
-if you want to try this out on windows follow [this](https://github.com/Qyriad/fusee-launcher/wiki/Instructions-(Windows)) guide and then you can use my program , but if you want somthing for longterm use then use [this](https://github.com/eliboa/TegraRcmGui) instead
+if you want to try this out on windows follow [this](https://github.com/Qyriad/fusee-launcher/wiki/Instructions-(Windows)) guide and then you can use my program , but if you want something for longterm use then use [this](https://github.com/eliboa/TegraRcmGui) instead
 # Credits
 * [Kate Temkin](https://twitter.com/ktemkin "Her twitter") for discovering the fusee-gelee exploit
 * [falquinho](https://github.com/falquinho) for making fusee-gelee as a module
